@@ -1,0 +1,12 @@
+// 根项目只做聚合：真正的构建逻辑在 versions/<mc 版本>/build.gradle + gradle/version-build.gradle
+plugins {
+	id 'base'
+}
+
+// 一次性构建全部三个版本，成品收集到根 build/libs：
+//   precise-glower-mc26.1.2.jar / precise-glower-mc26.2.jar / precise-glower-mc26.3.jar
+tasks.register('buildAll') {
+	group = 'build'
+	description = 'Builds the mod jar for every supported Minecraft version.'
+	dependsOn subprojects.collect { "${it.path}:collectJar" }
+}

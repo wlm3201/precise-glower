@@ -1,0 +1,97 @@
+// 各 Minecraft 版本子项目共享的构建逻辑
+// 需要子项目先设置 ext.mcVersion / ext.fabricApiVersion 并应用 fabric-loom 插件
+
+def mcVersion = project.mcVersion
+def fabricApiVersion = project.fabricApiVersion
+
+base {
+	archivesName = "precise-glower-mc${mcVersion}"
+}
+
+loom {
+	splitEnvironmentSourceSets()
+
+	mods {
+		"precise-glower" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+
+	runs {
+		client {
+			// 固定开发时窗口尺寸：1920x1080，配合 options.txt guiScale:3 -> 640x360 GUI
+			programArgs('--width', '1920', '--height', '1080')
+		}
+	}
+}
+
+// 共享源码（根 src/main、src/client）+ 版本差异（versions/<mc>/src 下同名目录），两侧结构一致
+sourceSets {
+	main {
+		java.srcDirs = [rootProject.file('src/main/java'), file('src/main/java')]
+		resources.srcDirs = [rootProject.file('src/main/resources'), file('src/main/resources')]
+	}
+	client {
+		java.srcDirs = [rootProject.file('src/client/java'), file('src/client/java')]
+		resources.srcDirs = [rootProject.file('src/client/resources'), file('src/client/resources')]
+	}
+}
+
+repositories {
+	// 依赖 Fabric 官方仓库即可（loom 会自动加入 Minecraft / mappings 仓库）
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${mcVersion}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${fabricApiVersion}"
+}
+
+processResources {
+	def modVersion = project.version
+	def mc = mcVersion
+	inputs.property "version", modVersion
+	inputs.property "minecraft_version", mc
+
+	filesMatching("fabric.mod.json") {
+		expand "version": modVersion, "minecraft_version": mc
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.encoding = 'UTF-8'
+	it.options.release = 25
+}
+
+java {
+	withSourcesJar()
+
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}
+
+jar {
+	from(rootProject.file("LICENSE")) {
+		rename { "${it}_precise-glower" }
+	}
+}
+
+// 把本版本的成品 jar 收集到根 build/libs，方便一次性发布
+// 配置期先把版本号取出来：放进 Copy 的闭包里会在执行期引用 project，直接破坏 configuration cache
+def modVersion = project.version
+def versionLibsDir = layout.buildDirectory.dir('libs')
+def rootLibsDir = rootProject.layout.buildDirectory.dir('libs')
+tasks.register('collectJar', Copy) {
+	group = 'build'
+	description = "Copies the remapped jar for MC ${mcVersion} into the root build/libs."
+	dependsOn tasks.named('build')
+	from(versionLibsDir) {
+		include '*.jar'
+		exclude '*-sources.jar'
+		exclude '*-dev.jar'
+	}
+	into(rootLibsDir)
+	// 带上版本号：收集时不带的话，发布出去的三个包名字都一样，分不清是哪个版本的产物
+	rename { "precise-glower-mc${mcVersion}-${modVersion}.jar" }
+}

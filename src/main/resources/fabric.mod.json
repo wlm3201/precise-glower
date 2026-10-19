@@ -1,0 +1,30 @@
+{
+	"schemaVersion": 1,
+	"id": "precise-glower",
+	"version": "${version}",
+	"name": "Precise Glower",
+	"description": "Highlight blocks, entities and dropped items with per-rule colors, block-state and NBT filters.",
+	"authors": [
+		"precise-glower contributors"
+	],
+	"license": "MIT",
+	"icon": "assets/precise-glower/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"com.preciseglower.client.PreciseGlowerClient"
+		]
+	},
+	"mixins": [
+		{
+			"config": "precise-glower.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~${minecraft_version}",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

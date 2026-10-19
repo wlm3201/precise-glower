@@ -1,0 +1,31 @@
+{
+	"required": true,
+	"package": "com.preciseglower.client.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"minVersion": "0.8",
+	"client": [
+		"MinecraftMixin",
+		"BlockModelRenderStateMixin",
+		"RenderTypeAccess",
+		"EntityMixin",
+		"LocalPlayerMixin",
+		"LevelMixin",
+		"HideStateMixin",
+		"EntityRenderDispatcherMixin",
+		"ver.EntityRendererMixin",
+		"ver.LivingEntityRendererMixin",
+		"ver.SubmitNodeCollectionMixin",
+		"ver.RenderLayerMixin",
+		"ver.RenderTypesMixin",
+		"ver.EyesLayerMixin",
+		"ver.EquipmentLayerRendererMixin",
+		"ver.ItemLayerRenderStateMixin",
+		"ver.LevelRendererMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}
