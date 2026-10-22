@@ -1,9 +1,0 @@
-plugins {
-	id 'net.fabricmc.fabric-loom' version "${loom_version}"
-	id 'maven-publish'
-}
-
-ext.mcVersion = '26.3'
-ext.fabricApiVersion = '0.162.0+26.3'
-
-apply from: rootProject.file('gradle/version-build.gradle')

@@ -11,11 +11,8 @@ pluginManagement {
 
 rootProject.name = 'precise-glower'
 
-// 每个 Minecraft 版本对应一个子项目（loom 一个 Gradle 项目只能绑定一个 MC 版本）。
-// 共享源码位于根 src/；版本差异位于 versions/<mc 版本>/src/，内部结构与根 src 一致
-// （main/java、main/resources、client/java、client/resources）。详见 gradle/version-build.gradle
-['26.1.2', '26.2', '26.3'].each { mc ->
-	String id = 'v' + mc.replace('.', '_')
-	include ":$id"
-	project(":$id").projectDir = file("versions/$mc")
+new File(settingsDir, 'versions').eachDir { dir ->
+	def projectName = ':v' + dir.name.replace('.', '_').replace('-', '_')
+	include projectName
+	project(projectName).projectDir = dir
 }

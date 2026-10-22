@@ -1,0 +1,97 @@
+
+apply plugin: 'java'
+apply plugin: 'net.fabricmc.fabric-loom'
+apply plugin: 'maven-publish'
+
+def modId = rootProject.property('mod_id') as String
+
+group = rootProject.group
+version = rootProject.version
+
+base {
+	archivesName = "${modId}-${project.minecraft_version}"
+}
+
+loom {
+	splitEnvironmentSourceSets()
+
+	mods {
+		create(modId) {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+}
+
+repositories {
+	maven {
+		name = 'Terraformers'
+		url = 'https://maven.terraformersmc.com/'
+	}
+	maven {
+		name = 'Xander'
+		url = 'https://maven.isxander.dev/releases'
+	}
+	maven {
+		name = 'Modrinth'
+		url = 'https://api.modrinth.com/maven'
+		content { includeGroup 'maven.modrinth' }
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${rootProject.property('loader_version')}"
+
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+sourceSets {
+	main {
+		java.srcDirs = [rootProject.file('src/main/java'), file('src/main/java')]
+		resources.srcDirs = [rootProject.file('src/main/resources'), file('src/main/resources')]
+	}
+	client {
+		java.srcDirs = [rootProject.file('src/client/java'), file('src/client/java')]
+		resources.srcDirs = [rootProject.file('src/client/resources'), file('src/client/resources')]
+	}
+}
+
+def modVersion = project.version.toString()
+def minecraftDependency = project.property('minecraft_dependency') as String
+
+processResources {
+	inputs.property 'version', modVersion
+	inputs.property 'minecraft_dependency', minecraftDependency
+
+	filesMatching('fabric.mod.json') {
+		expand 'version': modVersion, 'minecraft_dependency': minecraftDependency
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.encoding = 'UTF-8'
+	it.options.release = 25
+}
+
+java {
+	withSourcesJar()
+
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}
+
+jar {
+	from(rootProject.file('LICENSE')) {
+		rename { "${it}_${modId}" }
+	}
+}
+
+publishing {
+	publications {
+		create('mavenJava', MavenPublication) {
+			artifactId = modId
+			from components.java
+		}
+	}
+}

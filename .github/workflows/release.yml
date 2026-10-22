@@ -1,22 +1,28 @@
-name: Release
+name: release
 
 on:
   push:
-    tags:
-      - 'v*'
+    tags: ['v*']
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to build and publish, for example v1.0.0
+        required: true
+        type: string
 
 permissions:
   contents: write
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 25
+      # gradle/mod.gradle 用 Java 25 编译，构建机必须提供同版本 JDK
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -25,22 +31,33 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # Windows 上不涉及执行位，Linux runner 上如果 checkout 丢了 +x 就会 126
-      - name: Make gradlew executable
-        run: chmod +x gradlew
+      - name: Resolve version
+        id: version
+        run: |
+          tag="${{ inputs.tag || github.ref_name }}"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "value=${tag#v}" >> "$GITHUB_OUTPUT"
 
-      - name: Build all versions
-        run: ./gradlew buildAll --no-daemon --stacktrace
+      # 覆盖版本号，让 jar 名与 fabric.mod.json 和发布的 tag 一致
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew build --stacktrace -Pversion=${{ steps.version.outputs.value }}
 
-      - name: Upload artifacts (workflow run)
-        uses: actions/upload-artifact@v4
-        with:
-          name: jars
-          path: build/libs/precise-glower-mc*.jar
+      # 只发布正式 jar：-dev 是未重映射的，-sources 是给开发者看的
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          assets=$(ls build/libs/*.jar | grep -v -- '-dev\.jar$' | grep -v -- '-sources' || true)
 
-      - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: build/libs/precise-glower-mc*.jar
-          generate_release_notes: true
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" $assets --clobber
+          else
+            gh release create "$TAG" $assets \
+              --title "$TAG" \
+              --generate-notes \
+              --verify-tag
+          fi

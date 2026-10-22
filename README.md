@@ -1,4 +1,6 @@
-# Precise Glower 精准高亮
+# Precise Glower · 精准高亮
+
+[English](README.en.md) | 简体中文
 
 一个Minecraft Fabric 客户端 mod，为方块、实体和掉落物绘制高亮线框或描边，支持众多详细配置。
 
